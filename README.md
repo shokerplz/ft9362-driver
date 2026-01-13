@@ -76,7 +76,7 @@ nix develop            # Enter dev shell
 
 ## Other distributions
 
-If you need a package for your repo - please create an issue and I'll try to
+If you need a package for your distro - please create an issue and I'll try to
 figure something out. Or better just create a PR with building scripts.
 
 ## Technical Details
