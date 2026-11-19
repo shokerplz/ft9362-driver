@@ -59,6 +59,31 @@ Then rebuild:
 sudo nixos-rebuild switch --flake .
 ```
 
+## Installation (Fedora, Debian, Ubuntu)
+
+Download the package for your distro from the
+[releases page](https://github.com/shokerplz/ft9362-driver/releases). It is the
+distro's own `libfprint` rebuilt with this driver, so it replaces the stock one.
+
+Fedora 43 / 44 (use `fc43` instead of `fc44` on Fedora 43):
+
+```bash
+sudo dnf install ./libfprint-*.fc44.ft9362.x86_64.rpm fprintd fprintd-pam
+sudo dnf versionlock add libfprint
+sudo authselect enable-feature with-fingerprint
+```
+
+Debian 13, Ubuntu 24.04 / 26.04 (pick the file prefixed with your distro):
+
+```bash
+sudo apt install ./debian-13_libfprint-2-2_*.deb fprintd libpam-fprintd
+sudo apt-mark hold libfprint-2-2
+sudo pam-auth-update --enable fprintd
+```
+
+The `versionlock` / `apt-mark hold` line stops a distro `libfprint` update from
+replacing the package with the stock build, which has no driver for this sensor.
+
 ## Usage
 
 ```bash
@@ -73,6 +98,16 @@ fprintd-list $USER
 nix build              # Build fprintd with driver
 nix develop            # Enter dev shell
 ```
+
+Distro packages (needs Docker, output goes to `dist/`):
+
+```bash
+docker run --rm -v "$PWD":/src:z fedora:44 /src/packaging/build-rpm.sh /src/dist
+docker run --rm -v "$PWD":/src:z debian:13 /src/packaging/build-deb.sh /src/dist
+```
+
+Pushing a `v*` tag builds packages for all supported distros and attaches them
+to a GitHub release (`.github/workflows/packages.yml`).
 
 ## Other distributions
 

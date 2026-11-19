@@ -1,0 +1,47 @@
+name: Packages
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: fedora-44, image: 'fedora:44', script: build-rpm.sh }
+          - { name: fedora-43, image: 'fedora:43', script: build-rpm.sh }
+          - { name: debian-13, image: 'debian:13', script: build-deb.sh }
+          - { name: ubuntu-24.04, image: 'ubuntu:24.04', script: build-deb.sh }
+          - { name: ubuntu-26.04, image: 'ubuntu:26.04', script: build-deb.sh }
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash packaging/${{ matrix.script }} dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    permissions:
+      contents: write
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
